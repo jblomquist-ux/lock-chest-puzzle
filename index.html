@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Find the Crown – Chest Keypad Game</title>
+<style>
+  :root{
+    --blue1:#1a3a74;
+    --blue2:#2b5cb1;
+    --blue3:#3a7be0;
+    --steel:#c9d6e5;
+    --steel-d:#7f8ea4;
+    --accent:#7dd3ff;
+    --btn:#244a8f;
+    --btn-d:#173364;
+    --success:#1dd65e;
+    --error:#ff3b3b;
+  }
+  html,body{height:100%;margin:0;background:radial-gradient(1200px 600px at 50% 30%, #0d1530 0%, #040814 55%, #02040a 100%);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#e9f2ff;overflow:hidden}
+  .wrap{height:100%;display:grid;place-items:center}
+  .scene{width:min(920px,92vw);aspect-ratio:16/10;position:relative}
+  /* --- CHEST --- */
+  .chest{position:absolute;left:50%;bottom:7%;transform:translateX(-50%);width:min(720px,90%);height:54%; perspective:1400px;}
+  .chest .base{
+    position:absolute;inset:auto 0 0 0;height:74%;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,0) 30%) top/100% 20% no-repeat,
+      linear-gradient(180deg, #0f2a57, #0a2246 60%, #071b37) bottom/100% 100% no-repeat,
+      linear-gradient(180deg, var(--blue2), var(--blue1));
+    border:8px solid var(--steel);
+    border-top-width:10px;border-bottom-width:14px;
+    border-radius:14px 14px 20px 20px;
+    box-shadow:inset 0 0 0 6px #6e86a7,inset 0 0 25px rgba(0,0,0,.35),0 18px 40px rgba(0,0,0,.55);
+  }
+  .chest .lid{
+    position:absolute;left:0;right:0;top:-4%;
+    height:44%; transform-origin:50% 100%;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.22), rgba(255,255,255,0) 45%) top/100% 30% no-repeat,
+      linear-gradient(180deg, #19427f, #0f2f62 60%, #0b264f),
+      linear-gradient(180deg, var(--blue3), var(--blue2));
+    border:8px solid var(--steel);
+    border-bottom-width:12px;border-top-width:10px;
+    border-radius:16px 16px 10px 10px;
+    box-shadow:inset 0 0 0 6px #6e86a7,inset 0 0 22px rgba(0,0,0,.4);
+    transform:rotateX(0deg);
+    transition:transform 900ms cubic-bezier(.2,.75,.1,1.1);
+  }
+  .chest.open .lid{ transform:rotateX(68deg); }
+
+  /* Silver ribs */
+  .rib{position:absolute;left:14px;right:14px;height:8px;background:linear-gradient(180deg,var(--steel),#aab8c9);box-shadow:0 3px 0 rgba(0,0,0,.25), inset 0 0 4px rgba(255,255,255,.5)}
+  .rib.r1{top:20%}.rib.r2{top:42%}.rib.r3{bottom:26%}
+
+  /* --- KEYPAD --- */
+  .pad{
+    position:absolute;left:50%;bottom:12%;transform:translateX(-50%);
+    width:min(360px,60%);background:linear-gradient(180deg,#0a1e3f,#08142b);
+    border:6px solid var(--steel);border-radius:14px;box-shadow:inset 0 0 0 4px #6e86a7, 0 8px 20px rgba(0,0,0,.45);
+    padding:14px 14px 16px;display:grid;grid-template-rows:auto 1fr;gap:12px;
+  }
+  .display{
+    height:46px;border-radius:10px;background:#08122a;border:2px solid #5c6c86;display:flex;align-items:center;justify-content:center;gap:8px;letter-spacing:2px;
+    box-shadow:inset 0 0 12px rgba(0,0,0,.65);
+    font-size:22px;font-weight:700;
+  }
+  .digit{
+    width:28px;height:28px;border-radius:8px;background:#101b3a;border:2px solid #314160;display:grid;place-items:center;
+    color:#9fbaf2;transition:transform .12s ease, background .2s ease, border-color .2s ease, color .2s ease;
+  }
+  .digit.success{ background:rgba(20,255,120,.12); border-color:var(--success); color:var(--success); }
+  .digit.error{ background:rgba(255,60,60,.12); border-color:var(--error); color:var(--error); }
+
+  .keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+  .key{
+    height:60px;border-radius:12px;background:linear-gradient(180deg,#244a8f,#173364);
+    border:3px solid #9fb2c9;box-shadow:inset 0 0 0 3px #6e86a7, 0 6px 0 #0a1d3f, 0 8px 16px rgba(0,0,0,.45);
+    color:#e8f3ff;font-size:26px;font-weight:800;letter-spacing:1px;
+    display:grid;place-items:center;cursor:pointer;user-select:none;
+    transition:transform .06s ease, box-shadow .06s ease, filter .1s ease;
+  }
+  .key:active{ transform:translateY(4px); box-shadow:inset 0 0 0 3px #6e86a7, 0 2px 0 #0a1d3f, 0 4px 12px rgba(0,0,0,.35); filter:brightness(1.1); }
+
+  /* --- CROWN --- */
+  .crown{
+    position:absolute;left:50%;bottom:8%;transform:translate(-50%,0) scale(.9);
+    width:min(640px,80%);pointer-events:none;opacity:0;filter:drop-shadow(0 14px 30px rgba(0,0,0,.65));
+    transition:opacity .6s ease;
+  }
+  .chest.open + .crown{ opacity:1; animation:lift 1200ms ease forwards, hover 3.2s ease-in-out 1200ms infinite; }
+  @keyframes lift{ 0%{ transform:translate(-50%,0) scale(.9) } 100%{ transform:translate(-50%,-36%) scale(1) } }
+  @keyframes hover{ 0%,100%{ transform:translate(-50%,-36%) scale(1)} 50%{ transform:translate(-50%,-40%) scale(1)} }
+
+  /* Sparkles */
+  .sparkles{ position:absolute; left:50%; bottom:8%; width:0; height:0; pointer-events:none; opacity:0; }
+  .chest.open ~ .sparkles{ opacity:1; }
+  .sparkles i{
+    position:absolute; width:6px; height:6px; border-radius:50%; background:radial-gradient(circle,#fff, #fff0 70%);
+    animation: twinkle 1.6s infinite ease-in-out;
+    box-shadow:0 0 10px #fff, 0 0 18px #b0e0ff, 0 0 26px #7bd1ff;
+  }
+  .sparkles i:nth-child(1){ left: -180px; bottom: 140px; animation-delay: .0s }
+  .sparkles i:nth-child(2){ left:  170px; bottom: 160px; animation-delay: .25s }
+  .sparkles i:nth-child(3){ left:  -60px; bottom: 210px; animation-delay: .5s }
+  .sparkles i:nth-child(4){ left:  60px;  bottom: 230px; animation-delay: .75s }
+  .sparkles i:nth-child(5){ left:  230px; bottom: 110px; animation-delay: 1.0s }
+  .sparkles i:nth-child(6){ left: -230px; bottom: 110px; animation-delay: 1.2s }
+  @keyframes twinkle{
+    0%,100%{ transform:scale(.6); opacity:.55 }
+    50%{ transform:scale(1.2); opacity:1 }
+  }
+
+  /* --- MODAL --- */
+  .modal{
+    position:absolute; inset:0; display:grid; place-items:center; backdrop-filter:blur(2px);
+    background:radial-gradient(600px 400px at 50% 40%, rgba(32,53,112,.45), rgba(6,12,28,.6) 60%, rgba(3,6,14,.85) 100%);
+    opacity:0; pointer-events:none; transition:opacity .3s ease;
+  }
+  .modal.show{ opacity:1; pointer-events:auto; }
+  .card{
+    background:linear-gradient(180deg,#0f1b3a,#0a142c); border:2px solid #7aa5ff; border-radius:14px; padding:22px 24px; width:min(520px,92%); text-align:center;
+    box-shadow:0 16px 48px rgba(0,0,0,.55), inset 0 0 40px rgba(124,179,255,.08);
+  }
+  .card h2{ margin:6px 0 10px; font-size:28px }
+  .card p{ margin:0 0 16px; opacity:.9 }
+  .cta{
+    display:inline-grid; place-items:center; min-width:220px; height:48px; padding:0 18px; margin-top:6px;
+    background:linear-gradient(180deg,#2e7fff,#1a66e8); color:#fff; font-weight:800; letter-spacing:.3px;
+    border:2px solid #b9d8ff; border-radius:12px; box-shadow:0 8px 18px rgba(0,0,0,.35); cursor:pointer; text-decoration:none;
+  }
+  .cta:hover{ filter:brightness(1.05) }
+  .cta:active{ transform:translateY(1px) }
+  /* Utility */
+  .sr-only{ position:absolute; left:-10000px; top:auto; width:1px; height:1px; overflow:hidden; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="scene" aria-label="Treasure chest keypad puzzle">
+    <!-- Chest (lid opens on success) -->
+    <div id="chest" class="chest" aria-live="polite">
+      <div class="lid">
+        <div class="rib r1"></div>
+        <div class="rib r2"></div>
+      </div>
+      <div class="base">
+        <div class="rib r3"></div>
+        <!-- Keypad embedded on the front -->
+        <div class="pad" role="group" aria-label="Number keypad">
+          <div id="display" class="display" aria-live="polite">
+            <span class="digit">•</span>
+            <span class="digit">•</span>
+            <span class="digit">•</span>
+            <span class="digit">•</span>
+            <span class="digit">•</span>
+          </div>
+          <div class="keys">
+            <button class="key" data-k="1" aria-label="1">1</button>
+            <button class="key" data-k="2" aria-label="2">2</button>
+            <button class="key" data-k="3" aria-label="3">3</button>
+            <button class="key" data-k="4" aria-label="4">4</button>
+            <button class="key" data-k="5" aria-label="5">5</button>
+            <button class="key" data-k="6" aria-label="6">6</button>
+            <button class="key" data-k="7" aria-label="7">7</button>
+            <button class="key" data-k="8" aria-label="8">8</button>
+            <button class="key" data-k="9" aria-label="9">9</button>
+            <span></span>
+            <button class="key" data-k="0" aria-label="0">0</button>
+            <span></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crown (lifts on success) -->
+    <img id="crown" class="crown" alt="Jeweled crown" src="Assets%20(2).png"/>
+
+    <!-- Sparkles -->
+    <div class="sparkles" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="title" aria-describedby="desc">
+      <div class="card">
+        <h2 id="title">Congratulations, you found the crown!</h2>
+        <p id="desc">You unlocked the chest and recovered the Ice Queen’s crown.</p>
+        <a id="continueBtn" class="cta" href="#" target="_self" rel="noopener">Continue</a>
+        <div class="sr-only" id="srMsg">Puzzle solved. Crown revealed.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // === CONFIG ===
+  const CORRECT_CODE = "52879";
+  // If you rename your image, update this (or just set the <img src> directly above)
+  const CROWN_SRC = "Assets%20(2).png"; // keep for reference
+
+  // === STATE ===
+  const chest = document.getElementById('chest');
+  const keys = Array.from(document.querySelectorAll('.key'));
+  const displayDigits = Array.from(document.querySelectorAll('.display .digit'));
+  const modal = document.getElementById('modal');
+  const crown = document.getElementById('crown');
+  const continueBtn = document.getElementById('continueBtn');
+
+  let buffer = "";     // the 0..5 digits entered
+  let locked = false;  // prevent input while checking/animating
+
+  function resetDisplayColors() {
+    displayDigits.forEach(d => d.classList.remove('success','error'));
+  }
+  function clearInput() {
+    buffer = "";
+    resetDisplayColors();
+    displayDigits.forEach(d => d.textContent = "•");
+  }
+
+  function setDigitsColor(cls){
+    displayDigits.forEach(d => { d.classList.remove('success','error'); d.classList.add(cls); });
+  }
+
+  function openChest(){
+    chest.classList.add('open');
+    // show modal after lid animation
+    setTimeout(() => modal.classList.add('show'), 1100);
+  }
+
+  function onKeyPress(k){
+    if (locked) return;
+    if (buffer.length >= 5) return;
+
+    buffer += k;
+    // visual: push into display
+    displayDigits[buffer.length - 1].textContent = k;
+
+    if (buffer.length === 5){
+      locked = true;
+      // check code
+      if (buffer === CORRECT_CODE){
+        setDigitsColor('success');
+        // open, lift, sparkles, modal
+        setTimeout(() => {
+          openChest();
+          locked = false;
+        }, 500);
+      } else {
+        setDigitsColor('error');
+        // clear after a brief pause
+        setTimeout(() => {
+          clearInput();
+          locked = false;
+        }, 850);
+      }
+    }
+  }
+
+  // Attach events
+  keys.forEach(btn => {
+    btn.addEventListener('click', () => onKeyPress(btn.dataset.k));
+  });
+
+  // Also allow keyboard input
+  window.addEventListener('keydown', e => {
+    if (e.key >= '0' && e.key <= '9') onKeyPress(e.key);
+  });
+
+  // Optional: set a real link later
+  // continueBtn.href = "https://example.com/next";
+  // continueBtn.target = "_blank";
+
+  // Initialize
+  clearInput();
+})();
+</script>
+</body>
+</html>
